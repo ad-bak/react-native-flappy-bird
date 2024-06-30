@@ -1,7 +1,9 @@
 import { Canvas, Image, useImage } from "@shopify/react-native-skia";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { useWindowDimensions, View } from "react-native";
+import { useSharedValue, withTiming } from "react-native-reanimated";
 
 export default function Index() {
   const { width, height } = useWindowDimensions();
@@ -12,7 +14,13 @@ export default function Index() {
   const pipeReverse = useImage(require("../assets/sprites/pipe-green-reverse.png"));
   const base = useImage(require("../assets/sprites/base.png"));
 
-  const pipeOffset = 1000;
+  const pipeOffset = 0;
+
+  const x = useSharedValue(width);
+
+  useEffect(() => {
+    x.value = withTiming(0, { duration: 1000 });
+  }, [x]);
 
   return (
     <>
@@ -20,8 +28,8 @@ export default function Index() {
         <Canvas style={{ width, height }}>
           <Image image={bg} width={width} height={height} fit="cover" />
 
-          <Image image={pipe} y={height - 320} x={width / 2} width={103} height={640} />
-          <Image image={pipeReverse} y={-320} x={width / 2} width={103} height={640} />
+          <Image image={pipe} y={height - 320} x={x} width={103} height={640} />
+          <Image image={pipeReverse} y={-320} x={x} width={103} height={640} />
 
           <Image image={base} y={height - 75} width={width} height={100} x={0} fit="fill" />
 
