@@ -3,7 +3,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { useWindowDimensions, View } from "react-native";
-import { useSharedValue, withTiming } from "react-native-reanimated";
+import { Easing, useSharedValue, withRepeat, withSequence, withTiming } from "react-native-reanimated";
 
 export default function Index() {
   const { width, height } = useWindowDimensions();
@@ -19,7 +19,10 @@ export default function Index() {
   const x = useSharedValue(width);
 
   useEffect(() => {
-    x.value = withTiming(0, { duration: 1000 });
+    x.value = withRepeat(
+      withTiming(-150, { duration: 3000, easing: Easing.linear }),
+      withTiming(width, { duration: 0 })
+    );
   }, [x]);
 
   return (
