@@ -3,6 +3,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { useWindowDimensions, View } from "react-native";
+import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   Easing,
   useFrameCallback,
@@ -11,6 +12,10 @@ import {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
+
+const GRAVITY = 1000;
+const JUMP_FORCE = -400;
+const MAX_VELOCITY = 600;
 
 export default function Index() {
   const { width, height } = useWindowDimensions();
@@ -21,29 +26,44 @@ export default function Index() {
   const pipeReverse = useImage(require("../assets/sprites/pipe-green-reverse.png"));
   const base = useImage(require("../assets/sprites/base.png"));
 
-  const pipeOffset = 0;
-
   const x = useSharedValue(width);
-  const birdY = useSharedValue(height / 2);
-  const birdVelocity = 100;
 
-  useFrameCallback(({ timeSinceFirstFrame: dt }) => {
-    if (!dt) {
-      return;
+  const birdY = useSharedValue(height / 3);
+  const birdVelocity = useSharedValue(0);
+
+  useFrameCallback(({ timeSincePreviousFrame }) => {
+    if (!timeSincePreviousFrame) return;
+
+    const dt = timeSincePreviousFrame / 1000;
+    birdVelocity.value += GRAVITY * dt;
+    birdVelocity.value = Math.min(Math.max(birdVelocity.value, -MAX_VELOCITY), MAX_VELOCITY);
+    birdY.value += birdVelocity.value * dt;
+
+    // Prevent bird from going off screen
+    if (birdY.value > height - 123) {
+      birdY.value = height - 123;
+      birdVelocity.value = 0;
     }
-    birdY.value = birdY.value + (birdVelocity * dt) / 1000;
+    if (birdY.value < 0) {
+      birdY.value = 0;
+      birdVelocity.value = 0;
+    }
   });
 
   useEffect(() => {
     x.value = withRepeat(
-      withSequence(withTiming(-150, { duration: 3000, easing: Easing.linear }), withTiming(width, { duration: 0 })),
+      withSequence(withTiming(-150, { duration: 4000, easing: Easing.linear }), withTiming(width, { duration: 0 })),
       -1
     );
-  }, [x]);
+  }, [x, width]);
+
+  const gesture = Gesture.Tap().onStart(() => {
+    birdVelocity.value = JUMP_FORCE;
+  });
 
   return (
-    <>
-      <View style={{ flex: 1, paddingTop: 0 }}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureDetector gesture={gesture}>
         <Canvas style={{ width, height }}>
           <Image image={bg} width={width} height={height} fit="cover" />
 
@@ -54,7 +74,7 @@ export default function Index() {
 
           <Image image={bird} y={birdY} x={width / 2 - 32} width={64} height={48} fit="contain" />
         </Canvas>
-      </View>
-    </>
+      </GestureDetector>
+    </GestureHandlerRootView>
   );
 }
