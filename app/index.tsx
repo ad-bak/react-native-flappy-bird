@@ -3,7 +3,14 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { useWindowDimensions, View } from "react-native";
-import { Easing, useSharedValue, withRepeat, withSequence, withTiming } from "react-native-reanimated";
+import {
+  Easing,
+  useFrameCallback,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 
 export default function Index() {
   const { width, height } = useWindowDimensions();
@@ -17,11 +24,20 @@ export default function Index() {
   const pipeOffset = 0;
 
   const x = useSharedValue(width);
+  const birdY = useSharedValue(height / 2);
+  const birdVelocity = 100;
+
+  useFrameCallback(({ timeSinceFirstFrame: dt }) => {
+    if (!dt) {
+      return;
+    }
+    birdY.value = birdY.value + (birdVelocity * dt) / 1000;
+  });
 
   useEffect(() => {
     x.value = withRepeat(
-      withTiming(-150, { duration: 3000, easing: Easing.linear }),
-      withTiming(width, { duration: 0 })
+      withSequence(withTiming(-150, { duration: 3000, easing: Easing.linear }), withTiming(width, { duration: 0 })),
+      -1
     );
   }, [x]);
 
@@ -36,7 +52,7 @@ export default function Index() {
 
           <Image image={base} y={height - 75} width={width} height={100} x={0} fit="fill" />
 
-          <Image image={bird} y={height / 2 - 24} x={width / 2 - 32} width={64} height={48} fit="contain" />
+          <Image image={bird} y={birdY} x={width / 2 - 32} width={64} height={48} fit="contain" />
         </Canvas>
       </View>
     </>
