@@ -1,4 +1,4 @@
-import { Canvas, Slant, Group, Image, interpolate, matchFont, Text, useImage } from "@shopify/react-native-skia";
+import { Canvas, Slant, Group, Image, interpolate, matchFont, Text, useImage, Fill } from "@shopify/react-native-skia";
 import { useEffect, useState } from "react";
 import { Platform, useWindowDimensions } from "react-native";
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
@@ -23,12 +23,12 @@ export default function Index() {
   const { width, height } = useWindowDimensions();
   const [score, setScore] = useState(0);
 
-  const fontFamily = Platform.select({ ios: "Space Mono", android: "SpaceMono-Regular" });
+  const fontFamily = Platform.select({ ios: "Helvetica", android: "SpaceMono-Regular" });
 
   const fontStyle = {
     fontFamily,
-    fontSize: 14,
-    fontStyle: "italic",
+    fontSize: 40,
+    fontStyle: "none",
     fontWeight: "bold",
   } as const;
 
@@ -40,6 +40,8 @@ export default function Index() {
   const pipeReverse = useImage(require("../assets/sprites/pipe-green-reverse.png"));
   const base = useImage(require("../assets/sprites/base.png"));
 
+  const gameOver = useSharedValue(false);
+
   const x = useSharedValue(width);
 
   const birdY = useSharedValue(height / 3);
@@ -50,9 +52,15 @@ export default function Index() {
   const birdOrigin = useDerivedValue(() => {
     return { x: width / 4 + 32, y: birdY.value + 24 };
   });
+  const birdPos = {
+    x: width / 4,
+    y: birdY.value,
+  };
 
   useFrameCallback(({ timeSincePreviousFrame }) => {
-    if (!timeSincePreviousFrame) return;
+    if (!timeSincePreviousFrame || gameOver.value === true) {
+      return;
+    }
 
     const dt = timeSincePreviousFrame / 1000;
     birdVelocity.value += GRAVITY * dt;
@@ -79,10 +87,19 @@ export default function Index() {
   useAnimatedReaction(
     () => x.value,
     (currentValue, previousValue) => {
-      const middle = width / 2;
+      const middle = birdPos.x;
 
       if (currentValue !== previousValue && previousValue && currentValue <= middle && previousValue > middle) {
         runOnJS(setScore)(score + 1);
+      }
+    }
+  );
+
+  useAnimatedReaction(
+    () => birdY.value,
+    (currentValue, previousValue) => {
+      if (currentValue > height - 150) {
+        gameOver.value = true;
       }
     }
   );
@@ -103,10 +120,10 @@ export default function Index() {
           <Image image={base} y={height - 75} width={width} height={100} x={0} fit="fill" />
 
           <Group transform={birdTransform} origin={birdOrigin}>
-            <Image image={bird} y={birdY} x={width / 2 - 32} width={64} height={48} fit="contain" />
+            <Image image={bird} y={birdY} x={birdPos.x} width={64} height={48} fit="contain" />
           </Group>
 
-          <Text x={100} y={100} text={`Score: ${score.toString()}`} font={font} />
+          <Text y={100} text={score.toString()} font={font} x={width / 2 - 20} />
         </Canvas>
       </GestureDetector>
     </GestureHandlerRootView>
