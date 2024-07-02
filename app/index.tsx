@@ -1,11 +1,11 @@
-import { Canvas, Image, useImage } from "@shopify/react-native-skia";
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
+import { Canvas, Group, Image, interpolate, useImage } from "@shopify/react-native-skia";
 import { useEffect } from "react";
-import { useWindowDimensions, View } from "react-native";
+import { useWindowDimensions } from "react-native";
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   Easing,
+  Extrapolation,
+  useDerivedValue,
   useFrameCallback,
   useSharedValue,
   withRepeat,
@@ -30,6 +30,12 @@ export default function Index() {
 
   const birdY = useSharedValue(height / 3);
   const birdVelocity = useSharedValue(0);
+  const birdTransform = useDerivedValue(() => {
+    return [{ rotate: interpolate(birdVelocity.value, [-500, 500], [-0.5, 0.5], Extrapolation.CLAMP) }];
+  });
+  const birdOrigin = useDerivedValue(() => {
+    return { x: width / 4 + 32, y: birdY.value + 24 };
+  });
 
   useFrameCallback(({ timeSincePreviousFrame }) => {
     if (!timeSincePreviousFrame) return;
@@ -39,7 +45,6 @@ export default function Index() {
     birdVelocity.value = Math.min(Math.max(birdVelocity.value, -MAX_VELOCITY), MAX_VELOCITY);
     birdY.value += birdVelocity.value * dt;
 
-    // Prevent bird from going off screen
     if (birdY.value > height - 123) {
       birdY.value = height - 123;
       birdVelocity.value = 0;
@@ -72,7 +77,9 @@ export default function Index() {
 
           <Image image={base} y={height - 75} width={width} height={100} x={0} fit="fill" />
 
-          <Image image={bird} y={birdY} x={width / 2 - 32} width={64} height={48} fit="contain" />
+          <Group transform={birdTransform} origin={birdOrigin}>
+            <Image image={bird} y={birdY} x={width / 2 - 32} width={64} height={48} fit="contain" />
+          </Group>
         </Canvas>
       </GestureDetector>
     </GestureHandlerRootView>
