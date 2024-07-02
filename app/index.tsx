@@ -1,10 +1,12 @@
-import { Canvas, Group, Image, interpolate, useImage } from "@shopify/react-native-skia";
-import { useEffect } from "react";
-import { useWindowDimensions } from "react-native";
+import { Canvas, Group, Image, interpolate, matchFont, Text, useFont, useImage } from "@shopify/react-native-skia";
+import { useEffect, useState } from "react";
+import { Platform, useWindowDimensions } from "react-native";
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   Easing,
   Extrapolation,
+  runOnJS,
+  useAnimatedReaction,
   useDerivedValue,
   useFrameCallback,
   useSharedValue,
@@ -19,6 +21,17 @@ const MAX_VELOCITY = 600;
 
 export default function Index() {
   const { width, height } = useWindowDimensions();
+  const [score, setScore] = useState(0);
+
+  const fontFamily = Platform.select({ ios: "Space Mono", android: "SpaceMono-Regular" });
+
+  const fontStyle = {
+    fontFamily,
+    fontSize: 14,
+    fontStyle: "italic",
+    fontWeight: "bold",
+  };
+  const font = matchFont(fontStyle);
 
   const bg = useImage(require("../assets/sprites/background-day.png"));
   const bird = useImage(require("../assets/sprites/yellowbird-upflap.png"));
@@ -60,7 +73,18 @@ export default function Index() {
       withSequence(withTiming(-150, { duration: 4000, easing: Easing.linear }), withTiming(width, { duration: 0 })),
       -1
     );
-  }, [x, width]);
+  }, []);
+
+  useAnimatedReaction(
+    () => x.value,
+    (currentValue, previousValue) => {
+      const middle = width / 2;
+
+      if (currentValue !== previousValue && previousValue && currentValue <= middle && previousValue > middle) {
+        runOnJS(setScore)(score + 1);
+      }
+    }
+  );
 
   const gesture = Gesture.Tap().onStart(() => {
     birdVelocity.value = JUMP_FORCE;
@@ -80,6 +104,8 @@ export default function Index() {
           <Group transform={birdTransform} origin={birdOrigin}>
             <Image image={bird} y={birdY} x={width / 2 - 32} width={64} height={48} fit="contain" />
           </Group>
+
+          <Text x={100} y={100} text={`Score: ${score.toString()}`} font={font} />
         </Canvas>
       </GestureDetector>
     </GestureHandlerRootView>
