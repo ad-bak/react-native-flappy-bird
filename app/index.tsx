@@ -1,4 +1,4 @@
-import { Canvas, Group, Image, interpolate, matchFont, Text, useFont, useImage } from "@shopify/react-native-skia";
+import { Canvas, Slant, Group, Image, interpolate, matchFont, Text, useImage } from "@shopify/react-native-skia";
 import { useEffect, useState } from "react";
 import { Platform, useWindowDimensions } from "react-native";
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
@@ -30,7 +30,8 @@ export default function Index() {
     fontSize: 14,
     fontStyle: "italic",
     fontWeight: "bold",
-  };
+  } as const;
+
   const font = matchFont(fontStyle);
 
   const bg = useImage(require("../assets/sprites/background-day.png"));
