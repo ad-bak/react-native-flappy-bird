@@ -1,4 +1,4 @@
-import { Canvas, Slant, Group, Image, interpolate, matchFont, Text, useImage, Fill } from "@shopify/react-native-skia";
+import { Canvas, Group, Image, interpolate, matchFont, Text, useImage, Fill } from "@shopify/react-native-skia";
 import { useEffect, useState } from "react";
 import { Alert, Platform, useWindowDimensions } from "react-native";
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
@@ -29,7 +29,7 @@ export default function Index() {
   const fontStyle = {
     fontFamily,
     fontSize: 40,
-    fontStyle: "none",
+    fontStyle: "normal",
     fontWeight: "bold",
   } as const;
 
@@ -58,6 +58,13 @@ export default function Index() {
     y: birdY.value,
   };
 
+  const moveTheMap = () => {
+    x.value = withRepeat(
+      withSequence(withTiming(-150, { duration: 4000, easing: Easing.linear }), withTiming(width, { duration: 0 })),
+      -1
+    );
+  };
+
   useFrameCallback(({ timeSincePreviousFrame }) => {
     if (!timeSincePreviousFrame || gameOver.value === true) {
       return;
@@ -79,10 +86,7 @@ export default function Index() {
   });
 
   useEffect(() => {
-    x.value = withRepeat(
-      withSequence(withTiming(-150, { duration: 4000, easing: Easing.linear }), withTiming(width, { duration: 0 })),
-      -1
-    );
+    moveTheMap();
   }, []);
 
   useAnimatedReaction(
@@ -99,9 +103,8 @@ export default function Index() {
   useAnimatedReaction(
     () => birdY.value,
     (currentValue, previousValue) => {
-      if (currentValue > height - 130) {
+      if (currentValue > height - 130 || currentValue < 10) {
         gameOver.value = true;
-        cancelAnimation(x);
       }
     }
   );
@@ -115,8 +118,22 @@ export default function Index() {
     }
   );
 
+  const restartGame = () => {
+    "worklet";
+    birdY.value = height / 3;
+    birdVelocity.value = 0;
+    gameOver.value = false;
+    x.value = width;
+    runOnJS(setScore)(0);
+    runOnJS(moveTheMap)();
+  };
+
   const gesture = Gesture.Tap().onStart(() => {
-    birdVelocity.value = JUMP_FORCE;
+    if (gameOver.value) {
+      restartGame();
+    } else {
+      birdVelocity.value = JUMP_FORCE;
+    }
   });
 
   return (
