@@ -1,8 +1,9 @@
 import { Canvas, Slant, Group, Image, interpolate, matchFont, Text, useImage, Fill } from "@shopify/react-native-skia";
 import { useEffect, useState } from "react";
-import { Platform, useWindowDimensions } from "react-native";
+import { Alert, Platform, useWindowDimensions } from "react-native";
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import {
+  cancelAnimation,
   Easing,
   Extrapolation,
   runOnJS,
@@ -98,8 +99,18 @@ export default function Index() {
   useAnimatedReaction(
     () => birdY.value,
     (currentValue, previousValue) => {
-      if (currentValue > height - 150) {
+      if (currentValue > height - 130) {
         gameOver.value = true;
+        cancelAnimation(x);
+      }
+    }
+  );
+
+  useAnimatedReaction(
+    () => gameOver.value,
+    (currentValue, previousValue) => {
+      if (currentValue && !previousValue) {
+        cancelAnimation(x);
       }
     }
   );
