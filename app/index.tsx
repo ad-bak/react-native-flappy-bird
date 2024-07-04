@@ -1,4 +1,15 @@
-import { Canvas, Group, Image, interpolate, matchFont, Text, useImage, Fill } from "@shopify/react-native-skia";
+import {
+  Canvas,
+  Group,
+  Image,
+  interpolate,
+  matchFont,
+  Text,
+  useImage,
+  Fill,
+  Circle,
+  Rect,
+} from "@shopify/react-native-skia";
 import { useEffect, useState } from "react";
 import { Alert, Platform, useWindowDimensions } from "react-native";
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
@@ -19,6 +30,8 @@ import {
 const GRAVITY = 1000;
 const JUMP_FORCE = -400;
 const MAX_VELOCITY = 600;
+const PIPE_WIDTH = 103;
+const PIPE_HEIGHT = 640;
 
 export default function Index() {
   const { width, height } = useWindowDimensions();
@@ -46,6 +59,7 @@ export default function Index() {
   const x = useSharedValue(width);
 
   const birdY = useSharedValue(height / 3);
+  const birdX = width / 4;
   const birdVelocity = useSharedValue(0);
   const birdTransform = useDerivedValue(() => {
     return [{ rotate: interpolate(birdVelocity.value, [-500, 500], [-0.5, 0.5], Extrapolation.CLAMP) }];
@@ -57,6 +71,26 @@ export default function Index() {
     x: width / 4,
     y: birdY.value,
   };
+
+  const birdCenterX = useDerivedValue(() => birdPos.x + 32);
+  const birdCenterY = useDerivedValue(() => birdY.value + 24);
+  const pipeOffset = useSharedValue(0);
+
+  const obstacles = useDerivedValue(() => [
+    {
+      x: x.value,
+      y: height - 320 + pipeOffset.value,
+      h: PIPE_HEIGHT,
+      w: PIPE_WIDTH,
+    },
+    // top pipe
+    {
+      x: x.value,
+      y: pipeOffset.value - 320,
+      h: PIPE_HEIGHT,
+      w: PIPE_WIDTH,
+    },
+  ]);
 
   const moveTheMap = () => {
     x.value = withRepeat(
@@ -100,10 +134,34 @@ export default function Index() {
     }
   );
 
+  const isPointCollidingWithRect = (
+    point: { x: number; y: number },
+    rect: { x: number; y: number; w: number; h: number }
+  ) => {
+    "worklet";
+    return (
+      point.x >= rect.x && // right of the left edge AND
+      point.x <= rect.x + rect.w && // left of the right edge AND
+      point.y >= rect.y && // below the top AND
+      point.y <= rect.y + rect.h // above the bottom
+    );
+  };
+
+  // Collision detection
   useAnimatedReaction(
     () => birdY.value,
     (currentValue, previousValue) => {
-      if (currentValue > height - 130 || currentValue < 10) {
+      const center = {
+        x: birdX + 32,
+        y: birdY.value + 24,
+      };
+
+      if (currentValue > height - 130 || currentValue < 0) {
+        gameOver.value = true;
+      }
+
+      const isColliding = obstacles.value.some((rect) => isPointCollidingWithRect(center, rect));
+      if (isColliding) {
         gameOver.value = true;
       }
     }
@@ -142,14 +200,15 @@ export default function Index() {
         <Canvas style={{ width, height }}>
           <Image image={bg} width={width} height={height} fit="cover" />
 
-          <Image image={pipe} y={height - 320} x={x} width={103} height={640} />
-          <Image image={pipeReverse} y={-320} x={x} width={103} height={640} />
+          <Image image={pipe} y={height - 320} x={x} width={PIPE_WIDTH} height={PIPE_HEIGHT} />
+          <Image image={pipeReverse} y={-320} x={x} width={PIPE_WIDTH} height={PIPE_HEIGHT} />
 
           <Image image={base} y={height - 75} width={width} height={100} x={0} fit="fill" />
 
           <Group transform={birdTransform} origin={birdOrigin}>
             <Image image={bird} y={birdY} x={birdPos.x} width={64} height={48} fit="contain" />
           </Group>
+          <Circle cy={birdCenterY} cx={birdCenterX} r={15} color={"purple"} />
 
           <Text y={100} text={score.toString()} font={font} x={width / 2 - 20} />
         </Canvas>
