@@ -73,11 +73,12 @@ export default function Index() {
     y: birdY.value,
   };
 
-  const birdCenterX = useDerivedValue(() => birdPos.x + 32);
-  const birdCenterY = useDerivedValue(() => birdY.value + 24);
   const pipeOffset = useSharedValue(0);
   const topPipeY = useDerivedValue(() => pipeOffset.value - 320);
   const bottomPipeY = useDerivedValue(() => height - 320 + pipeOffset.value);
+  const pipeSpeed = useDerivedValue(() => {
+    return interpolate(score, [0, 20], [1, 2], Extrapolation.CLAMP);
+  });
 
   const obstacles = useDerivedValue(() => [
     {
@@ -96,9 +97,10 @@ export default function Index() {
   ]);
 
   const moveTheMap = () => {
-    pipeX.value = withRepeat(
-      withSequence(withTiming(-150, { duration: 4000, easing: Easing.linear }), withTiming(width, { duration: 0 })),
-      -1
+    pipeX.value = withSequence(
+      withTiming(width, { duration: 0 }),
+      withTiming(-150, { duration: 3000 / pipeSpeed.value, easing: Easing.linear }),
+      withTiming(width, { duration: 0 })
     );
   };
 
@@ -133,6 +135,8 @@ export default function Index() {
 
       if (previousValue && currentValue < -100 && previousValue > -100) {
         pipeOffset.value = Math.random() * 400 - 200;
+        cancelAnimation(pipeX);
+        runOnJS(moveTheMap)();
       }
 
       if (currentValue !== previousValue && previousValue && currentValue <= middle && previousValue > middle) {
@@ -199,6 +203,7 @@ export default function Index() {
     } else {
       birdVelocity.value = JUMP_FORCE;
     }
+    ``;
   });
 
   return (
