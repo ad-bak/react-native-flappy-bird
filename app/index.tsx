@@ -75,6 +75,8 @@ export default function Index() {
   const birdCenterX = useDerivedValue(() => birdPos.x + 32);
   const birdCenterY = useDerivedValue(() => birdY.value + 24);
   const pipeOffset = useSharedValue(0);
+  const topPipeY = useDerivedValue(() => height - 320);
+  const bottomPipeY = useDerivedValue(() => -320 + pipeOffset.value);
 
   const obstacles = useDerivedValue(() => [
     {
@@ -127,6 +129,10 @@ export default function Index() {
     () => x.value,
     (currentValue, previousValue) => {
       const middle = birdPos.x;
+
+      if (previousValue && currentValue < 0 && previousValue > 0) {
+        pipeOffset.value = Math.random() * (height - 320 - 320);
+      }
 
       if (currentValue !== previousValue && previousValue && currentValue <= middle && previousValue > middle) {
         runOnJS(setScore)(score + 1);
@@ -200,15 +206,14 @@ export default function Index() {
         <Canvas style={{ width, height }}>
           <Image image={bg} width={width} height={height} fit="cover" />
 
-          <Image image={pipe} y={height - 320} x={x} width={PIPE_WIDTH} height={PIPE_HEIGHT} />
-          <Image image={pipeReverse} y={-320} x={x} width={PIPE_WIDTH} height={PIPE_HEIGHT} />
+          <Image image={pipe} y={topPipeY.value} x={x} width={PIPE_WIDTH} height={PIPE_HEIGHT} />
+          <Image image={pipeReverse} y={bottomPipeY.value} x={x} width={PIPE_WIDTH} height={PIPE_HEIGHT} />
 
           <Image image={base} y={height - 75} width={width} height={100} x={0} fit="fill" />
 
           <Group transform={birdTransform} origin={birdOrigin}>
             <Image image={bird} y={birdY} x={birdPos.x} width={64} height={48} fit="contain" />
           </Group>
-          <Circle cy={birdCenterY} cx={birdCenterX} r={15} color={"purple"} />
 
           <Text y={100} text={score.toString()} font={font} x={width / 2 - 20} />
         </Canvas>
