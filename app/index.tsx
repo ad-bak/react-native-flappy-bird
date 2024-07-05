@@ -57,7 +57,7 @@ export default function Index() {
 
   const gameOver = useSharedValue(false);
 
-  const x = useSharedValue(width);
+  const pipeX = useSharedValue(width);
 
   const birdY = useSharedValue(height / 3);
   const birdX = width / 4;
@@ -81,14 +81,14 @@ export default function Index() {
 
   const obstacles = useDerivedValue(() => [
     {
-      x: x.value,
+      x: pipeX.value,
       y: height - 320 + pipeOffset.value,
       h: PIPE_HEIGHT,
       w: PIPE_WIDTH,
     },
     // top pipe
     {
-      x: x.value,
+      x: pipeX.value,
       y: pipeOffset.value - 320,
       h: PIPE_HEIGHT,
       w: PIPE_WIDTH,
@@ -96,7 +96,7 @@ export default function Index() {
   ]);
 
   const moveTheMap = () => {
-    x.value = withRepeat(
+    pipeX.value = withRepeat(
       withSequence(withTiming(-150, { duration: 4000, easing: Easing.linear }), withTiming(width, { duration: 0 })),
       -1
     );
@@ -127,7 +127,7 @@ export default function Index() {
   }, []);
 
   useAnimatedReaction(
-    () => x.value,
+    () => pipeX.value,
     (currentValue, previousValue) => {
       const middle = birdPos.x;
 
@@ -178,7 +178,7 @@ export default function Index() {
     () => gameOver.value,
     (currentValue, previousValue) => {
       if (currentValue && !previousValue) {
-        cancelAnimation(x);
+        cancelAnimation(pipeX);
       }
     }
   );
@@ -188,7 +188,7 @@ export default function Index() {
     birdY.value = height / 3;
     birdVelocity.value = 0;
     gameOver.value = false;
-    x.value = width;
+    pipeX.value = width;
     runOnJS(setScore)(0);
     runOnJS(moveTheMap)();
   };
@@ -207,8 +207,8 @@ export default function Index() {
         <Canvas style={{ width, height }}>
           <Image image={bg} width={width} height={height} fit="cover" />
 
-          <Image image={pipe} y={topPipeY} x={x} width={PIPE_WIDTH} height={PIPE_HEIGHT} />
-          <Image image={pipeReverse} y={bottomPipeY} x={x} width={PIPE_WIDTH} height={PIPE_HEIGHT} />
+          <Image image={pipe} y={topPipeY} x={pipeX} width={PIPE_WIDTH} height={PIPE_HEIGHT} />
+          <Image image={pipeReverse} y={bottomPipeY} x={pipeX} width={PIPE_WIDTH} height={PIPE_HEIGHT} />
 
           <Image image={base} y={height - 75} width={width} height={100} x={0} fit="fill" />
 
